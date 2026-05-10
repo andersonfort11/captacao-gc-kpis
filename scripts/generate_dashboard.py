@@ -44,12 +44,13 @@ else:
 
 
 def jira_search(jql, fields="summary,status,assignee,created,customfield_10026", max_results=100):
-    """Busca issues no Jira via REST API v3 (POST)."""
+    """Busca issues no Jira via REST API v3 (novo endpoint search/jql)."""
     all_issues = []
     start_at = 0
 
     while True:
-        url = f"{JIRA_URL}/rest/api/3/search"
+        # Tenta novo endpoint primeiro, fallback para o clássico
+        url = f"{JIRA_URL}/rest/api/3/search/jql"
         body = json.dumps({
             "jql": jql,
             "fields": fields.split(","),
@@ -63,8 +64,27 @@ def jira_search(jql, fields="summary,status,assignee,created,customfield_10026",
             "Content-Type": "application/json",
         })
 
-        with urllib.request.urlopen(req, context=ssl_ctx) as resp:
-            data = json.loads(resp.read().decode())
+        try:
+            with urllib.request.urlopen(req, context=ssl_ctx) as resp:
+                data = json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code == 410 or e.code == 404:
+                # Fallback: tentar endpoint clássico com GET
+                params = urllib.parse.urlencode({
+                    "jql": jql,
+                    "fields": fields,
+                    "maxResults": max_results,
+                    "startAt": start_at,
+                })
+                url = f"{JIRA_URL}/rest/api/2/search?{params}"
+                req = urllib.request.Request(url, headers={
+                    "Authorization": f"Basic {credentials}",
+                    "Content-Type": "application/json",
+                })
+                with urllib.request.urlopen(req, context=ssl_ctx) as resp:
+                    data = json.loads(resp.read().decode())
+            else:
+                raise
 
         issues = data.get("issues", [])
         all_issues.extend(issues)
