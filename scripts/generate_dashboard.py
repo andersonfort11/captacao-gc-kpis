@@ -44,19 +44,18 @@ else:
 
 
 def jira_search(jql, fields="summary,status,assignee,created,customfield_10026", max_results=100):
-    """Busca issues no Jira via REST API v3."""
+    """Busca issues no Jira via novo endpoint /rest/api/3/search/jql (GET)."""
     all_issues = []
     start_at = 0
 
     while True:
-        # Usar GET com query params (funciona em todas as versões do Jira Cloud)
         params = urllib.parse.urlencode({
             "jql": jql,
             "fields": fields,
             "maxResults": max_results,
             "startAt": start_at,
         })
-        url = f"{JIRA_URL}/rest/api/3/search?{params}"
+        url = f"{JIRA_URL}/rest/api/3/search/jql?{params}"
 
         credentials = base64.b64encode(f"{JIRA_USERNAME}:{JIRA_API_TOKEN}".encode()).decode()
         req = urllib.request.Request(url, headers={
@@ -68,7 +67,6 @@ def jira_search(jql, fields="summary,status,assignee,created,customfield_10026",
             with urllib.request.urlopen(req, context=ssl_ctx) as resp:
                 data = json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
-            # Ler corpo do erro para debug
             error_body = e.read().decode() if e.fp else ""
             print(f"  HTTP Error {e.code}: {error_body[:500]}")
             raise
