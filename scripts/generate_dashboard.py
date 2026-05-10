@@ -44,52 +44,40 @@ else:
 
 
 def jira_search(jql, fields="summary,status,assignee,created,customfield_10026", max_results=100):
-    """Busca issues no Jira via REST API v3 (novo endpoint search/jql)."""
+    """Busca issues no Jira via REST API v3."""
     all_issues = []
     start_at = 0
 
     while True:
-        # Tenta novo endpoint primeiro, fallback para o clássico
-        url = f"{JIRA_URL}/rest/api/3/search/jql"
-        body = json.dumps({
+        # Usar GET com query params (funciona em todas as versões do Jira Cloud)
+        params = urllib.parse.urlencode({
             "jql": jql,
-            "fields": fields.split(","),
+            "fields": fields,
             "maxResults": max_results,
             "startAt": start_at,
-        }).encode("utf-8")
+        })
+        url = f"{JIRA_URL}/rest/api/3/search?{params}"
 
         credentials = base64.b64encode(f"{JIRA_USERNAME}:{JIRA_API_TOKEN}".encode()).decode()
-        req = urllib.request.Request(url, data=body, method="POST", headers={
+        req = urllib.request.Request(url, headers={
             "Authorization": f"Basic {credentials}",
-            "Content-Type": "application/json",
+            "Accept": "application/json",
         })
 
         try:
             with urllib.request.urlopen(req, context=ssl_ctx) as resp:
                 data = json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
-            if e.code == 410 or e.code == 404:
-                # Fallback: tentar endpoint clássico com GET
-                params = urllib.parse.urlencode({
-                    "jql": jql,
-                    "fields": fields,
-                    "maxResults": max_results,
-                    "startAt": start_at,
-                })
-                url = f"{JIRA_URL}/rest/api/2/search?{params}"
-                req = urllib.request.Request(url, headers={
-                    "Authorization": f"Basic {credentials}",
-                    "Content-Type": "application/json",
-                })
-                with urllib.request.urlopen(req, context=ssl_ctx) as resp:
-                    data = json.loads(resp.read().decode())
-            else:
-                raise
+            # Ler corpo do erro para debug
+            error_body = e.read().decode() if e.fp else ""
+            print(f"  HTTP Error {e.code}: {error_body[:500]}")
+            raise
 
         issues = data.get("issues", [])
         all_issues.extend(issues)
 
-        if len(all_issues) >= data.get("total", 0) or len(issues) == 0:
+        total = data.get("total", 0)
+        if len(all_issues) >= total or len(issues) == 0:
             break
         start_at += max_results
 
