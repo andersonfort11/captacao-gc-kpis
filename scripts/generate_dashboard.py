@@ -34,28 +34,31 @@ TEAM_MEMBERS = [
 
 OUTPUT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# SSL context (para ambientes com proxy)
-ssl_ctx = ssl.create_default_context()
-ssl_ctx.check_hostname = False
-ssl_ctx.verify_mode = ssl.CERT_NONE
+# SSL context (desabilita verificação apenas localmente com proxy)
+if os.environ.get("GITHUB_ACTIONS"):
+    ssl_ctx = ssl.create_default_context()
+else:
+    ssl_ctx = ssl.create_default_context()
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_NONE
 
 
 def jira_search(jql, fields="summary,status,assignee,created,customfield_10026", max_results=100):
-    """Busca issues no Jira via REST API."""
+    """Busca issues no Jira via REST API v3 (POST)."""
     all_issues = []
     start_at = 0
 
     while True:
-        params = urllib.parse.urlencode({
+        url = f"{JIRA_URL}/rest/api/3/search"
+        body = json.dumps({
             "jql": jql,
-            "fields": fields,
+            "fields": fields.split(","),
             "maxResults": max_results,
             "startAt": start_at,
-        })
-        url = f"{JIRA_URL}/rest/api/3/search?{params}"
+        }).encode("utf-8")
 
         credentials = base64.b64encode(f"{JIRA_USERNAME}:{JIRA_API_TOKEN}".encode()).decode()
-        req = urllib.request.Request(url, headers={
+        req = urllib.request.Request(url, data=body, method="POST", headers={
             "Authorization": f"Basic {credentials}",
             "Content-Type": "application/json",
         })
