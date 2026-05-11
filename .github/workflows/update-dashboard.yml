@@ -2,8 +2,8 @@ name: Atualiza Dashboard KPIs
 
 on:
   schedule:
-    # Toda segunda-feira às 08:00 UTC (05:00 BRT)
-    - cron: '0 8 * * 1'
+    # Toda terça-feira às 08:00 UTC (05:00 BRT)
+    - cron: '0 8 * * 2'
   workflow_dispatch: # Permite execução manual
 
 jobs:
