@@ -373,7 +373,7 @@ dashboard_html = f"""<!DOCTYPE html>
 </body>
 </html>"""
 
-output_path = os.path.join(OUTPUT_DIR, "index.html")
+output_path = os.path.join(OUTPUT_DIR, "kpis.html")
 with open(output_path, "w", encoding="utf-8") as f:
     f.write(dashboard_html)
 
