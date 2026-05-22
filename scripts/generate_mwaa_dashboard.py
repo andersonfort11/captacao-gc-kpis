@@ -377,6 +377,8 @@ html = f"""<!DOCTYPE html>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         body {{ background-color: #1a1a2e; color: #eaeaea; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; }}
+        .back-btn {{ display: inline-block; margin: 10px 0 0 10px; padding: 8px 16px; background: #16213e; color: #00BCD4; border: 1px solid #333; border-radius: 8px; text-decoration: none; font-size: 0.9em; transition: border-color 0.2s; }}
+        .back-btn:hover {{ border-color: #00BCD4; }}
         .header {{ text-align: center; padding: 20px 0; border-bottom: 1px solid #2c3e50; margin-bottom: 30px; }}
         .header h1 {{ margin: 0; font-size: 24px; }}
         .header .subtitle {{ color: #7f8c8d; font-size: 14px; margin-top: 5px; }}
@@ -391,6 +393,7 @@ html = f"""<!DOCTYPE html>
     </style>
 </head>
 <body>
+    <a href="index.html" class="back-btn">← Voltar</a>
     <div class="header">
         <h1>Monitoramento Dados — Time Captacao e G&C</h1>
         <div class="subtitle">Periodo: Janeiro a Maio 2026 | Atualizado: {updated_at}</div>

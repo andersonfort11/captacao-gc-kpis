@@ -337,6 +337,8 @@ dashboard_html = f"""<!DOCTYPE html>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         body {{ background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }}
+        .back-btn {{ display: inline-block; margin: 10px 0 0 10px; padding: 8px 16px; background: #16213e; color: #00BCD4; border: 1px solid #333; border-radius: 8px; text-decoration: none; font-size: 0.9em; transition: border-color 0.2s; }}
+        .back-btn:hover {{ border-color: #00BCD4; }}
         .header {{ text-align: center; padding: 20px; }}
         .header h1 {{ color: #fff; margin: 0; font-size: 1.8em; }}
         .header p {{ color: #aaa; }}
@@ -349,6 +351,7 @@ dashboard_html = f"""<!DOCTYPE html>
     </style>
 </head>
 <body>
+    <a href="index.html" class="back-btn">← Voltar</a>
     <div class="header">
         <h1>KPIs — Time Captacao e G&C</h1>
         <p>Periodo: Janeiro a Maio 2026 | Atualizado em: {updated_at}</p>
