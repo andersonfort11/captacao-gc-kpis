@@ -141,11 +141,11 @@ incidentes_jql = (
 incidentes = jira_search(incidentes_jql, fields="summary,status,assignee,created")
 print(f"  Incidentes: {len(incidentes)}")
 
-# Histórias trabalhadas
+# Histórias trabalhadas (apenas DENA, status Concluído/Aceito)
 historias_jql = (
-    f'project in (DENA, DAPL) AND issuetype = História AND '
+    f'project = DENA AND issuetype = História AND '
     f'assignee in ({assignee_filter}) AND '
-    f'status in ("Em Andamento", "Concluído", "Aceito") AND '
+    f'status in ("Concluído", "Aceito") AND '
     f'created >= "2026-01-01" ORDER BY created ASC'
 )
 historias = jira_search(historias_jql)
@@ -169,23 +169,34 @@ for sprint in sprints_data:
     label = format_sprint_label(sprint)
     sprint_labels.append(label)
 
-    # Buscar issues da sprint
+    # Buscar issues da sprint (com paginação)
     credentials = base64.b64encode(f"{JIRA_USERNAME}:{JIRA_API_TOKEN}".encode()).decode()
-    url = f"{JIRA_URL}/rest/agile/1.0/sprint/{sprint_id}/issue?maxResults=100&fields=issuetype,status,customfield_10026,assignee"
-    req = urllib.request.Request(url, headers={
-        "Authorization": f"Basic {credentials}",
-        "Content-Type": "application/json",
-    })
+    sprint_issues = []
+    start_at_sprint = 0
+    while True:
+        url = (f"{JIRA_URL}/rest/agile/1.0/sprint/{sprint_id}/issue"
+               f"?maxResults=100&startAt={start_at_sprint}"
+               f"&fields=issuetype,status,customfield_10026,assignee,project")
+        req = urllib.request.Request(url, headers={
+            "Authorization": f"Basic {credentials}",
+            "Content-Type": "application/json",
+        })
 
-    with urllib.request.urlopen(req, context=ssl_ctx) as resp:
-        sprint_issues = json.loads(resp.read().decode()).get("issues", [])
+        with urllib.request.urlopen(req, context=ssl_ctx) as resp:
+            page_data = json.loads(resp.read().decode())
+            page_issues = page_data.get("issues", [])
+            sprint_issues.extend(page_issues)
+            if len(sprint_issues) >= page_data.get("total", 0) or len(page_issues) == 0:
+                break
+            start_at_sprint += 100
 
-    # Filtrar apenas membros do time
+    # Filtrar: apenas projeto DENA + membros do time
     team_issues = [i for i in sprint_issues
                    if i.get("fields", {}).get("assignee", {}) and
-                   i["fields"]["assignee"].get("emailAddress", "") in TEAM_MEMBERS]
+                   i["fields"]["assignee"].get("emailAddress", "") in TEAM_MEMBERS and
+                   i.get("fields", {}).get("project", {}).get("key", "") == "DENA"]
 
-    # Contar SP de histórias concluídas/aceitas
+    # Contar SP de histórias concluídas/aceitas (status atual)
     sp_total = 0
     hist_count = 0
     inc_count = 0
@@ -193,14 +204,14 @@ for sprint in sprints_data:
     for issue in team_issues:
         fields = issue.get("fields", {})
         issue_type = fields.get("issuetype", {}).get("name", "")
-        status_cat = fields.get("status", {}).get("statusCategory", {}).get("name", "")
+        status_name = fields.get("status", {}).get("name", "")
         sp = fields.get("customfield_10026")
 
-        if issue_type == "História" and status_cat in ("Done", "Itens concluídos"):
+        if issue_type == "História" and status_name in ("Concluído", "Aceito"):
             if sp:
                 sp_total += sp
             hist_count += 1
-        elif issue_type == "Incidente" and status_cat in ("Done", "Itens concluídos"):
+        elif issue_type == "Incidente" and status_name in ("Concluído", "Aceito"):
             inc_count += 1
 
     sp_por_sprint.append(sp_total)
