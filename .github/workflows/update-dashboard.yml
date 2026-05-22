@@ -1,6 +1,10 @@
 name: Atualiza Dashboard KPIs
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/generate_dashboard.py'
   schedule:
     # Toda terça-feira às 08:00 UTC (05:00 BRT)
     - cron: '0 8 * * 2'
