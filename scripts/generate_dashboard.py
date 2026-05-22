@@ -524,3 +524,4 @@ print(f"   SP total: {total_sp} | Média: {media_sp} SP/sprint")
 print(f"   Histórias: {total_historias} | Incidentes: {total_incidentes}")
 print(f"   Método: changelog-based (sem duplicação entre sprints)")
 print(f"{'=' * 60}")
+
