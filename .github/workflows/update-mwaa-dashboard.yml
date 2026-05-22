@@ -1,0 +1,40 @@
+name: Atualiza Dashboard MWAA
+
+on:
+  schedule:
+    # Diariamente às 15:00 UTC (12:00 BRT)
+    - cron: '0 15 * * *'
+  workflow_dispatch: # Permite execução manual
+
+jobs:
+  update-mwaa-dashboard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependências
+        run: pip install plotly boto3 requests urllib3
+
+      - name: Gerar dashboard MWAA
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: python scripts/generate_mwaa_dashboard.py
+
+      - name: Commit e push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mwaa.html
+          git diff --staged --quiet || git commit -m "Atualiza dashboard MWAA - $(date +'%d/%m/%Y')"
+          git push
