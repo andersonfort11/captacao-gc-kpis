@@ -230,7 +230,7 @@ daily_gente = process_standard(runs_gente)
 
 # 2. CRESCIMENTO_CAPCOM
 print("\n[2/3] CRESCIMENTO_CAPCOM...")
-runs_capcom = fetch_dag_runs_rest("cdl-airflow-mwaa", "CRESCIMENTO_CAPCOM")
+runs_capcom = fetch_dag_runs_cli("cdl-airflow-mwaa", "CRESCIMENTO_CAPCOM")
 print(f"  Runs: {len(runs_capcom)}")
 daily_capcom = process_standard(runs_capcom)
 
